@@ -43,3 +43,23 @@ None repo-specific. The global house rules apply.
   `Docs/agents/Virtual-Agents-User-Manual.md`
 - Starter package overview: `virtual-agents/README.md`
 - Personal working notes: `AGENTS.local.md`
+
+## Scanning & review
+
+Policy lives in `~/.config/agents/AGENTS.md` -> "Dependency, code, and secret
+scanning" and "Model delegation & cross-provider review". It is not restated
+here; read it there. What is specific to this repo:
+
+- CI runs `gitleaks` on every PR, every push to `main`, and weekly
+  (`.github/workflows/security.yml`). There are no dependency manifests here,
+  so there is nothing for `npm audit` or `osv-scanner` to scan.
+- Dependabot: `github-actions` only (`.github/dependabot.yml`), which keeps the
+  workflow's pinned action SHAs current. No package ecosystem, because there is
+  no dependency manifest to watch.
+- PR reviewers: **Codex** (GPT-6 Astra, run locally against the committed branch
+  before opening the PR) and **CodeRabbit** (`coderabbitai[bot]`, re-reviews
+  every push — the one to wait on for the head being merged). A green CodeRabbit
+  check does not mean a review ran: read the check run's output title, where only
+  `Finished` means reviewed. Silence means clean; findings arrive as inline
+  comments. `no-ai-review` at PR creation skips the bots.
+- The global pre-commit hook runs `gitleaks` and fails closed.

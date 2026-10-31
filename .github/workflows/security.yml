@@ -1,0 +1,66 @@
+# Free security scans on every PR, every push to the default branch, and weekly
+# on a timer (a timer catches advisories published against code that has not
+# changed). Policy: ~/.config/agents/AGENTS.md -> "Dependency, code, and secret
+# scanning".
+#
+# Actions are pinned to commit SHAs, never floating tags: a tag can be moved to
+# malicious code, a SHA cannot. Scanner binaries are installed from
+# checksum-verified release assets at a pinned version (bump V by hand).
+# Trigger is `pull_request`, never `pull_request_target`.
+#
+# This repo has no dependency manifests, so the dependency scanners
+# (npm audit, npm audit signatures, osv-scanner) are deliberately absent;
+# gitleaks is the whole gate. Add them back if a manifest ever lands.
+
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 11 * * 1" # Mondays 06:17 America/Chicago (11:17 UTC)
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks 8.30.1 (checksum-verified release binary)
+        run: |
+          set -eu
+          V=8.30.1
+          B="https://github.com/gitleaks/gitleaks/releases/download/v${V}"
+          curl -fsSLO "${B}/gitleaks_${V}_linux_x64.tar.gz"
+          curl -fsSLO "${B}/gitleaks_${V}_checksums.txt"
+          grep " gitleaks_${V}_linux_x64.tar.gz$" "gitleaks_${V}_checksums.txt" | sha256sum -c -
+          tar -xzf "gitleaks_${V}_linux_x64.tar.gz" gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan the commits this event introduced (full history on the timer)
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -eu
+          case "$GITHUB_EVENT_NAME" in
+            pull_request) OPTS="$BASE..$HEAD" ;;
+            push)
+              case "$BEFORE" in
+                0000000000000000000000000000000000000000) OPTS="-n 50" ;;
+                *) OPTS="$BEFORE..$GITHUB_SHA" ;;
+              esac ;;
+            *) OPTS="" ;;
+          esac
+          if [ -n "$OPTS" ]; then
+            gitleaks git --redact --no-banner -v --log-opts="$OPTS"
+          else
+            gitleaks git --redact --no-banner -v
+          fi
