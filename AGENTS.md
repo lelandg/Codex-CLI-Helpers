@@ -56,10 +56,9 @@ here; read it there. What is specific to this repo:
 - Dependabot: `github-actions` only (`.github/dependabot.yml`), which keeps the
   workflow's pinned action SHAs current. No package ecosystem, because there is
   no dependency manifest to watch.
-- PR reviewers: **Codex** (GPT-6 Astra, run locally against the committed branch
-  before opening the PR) and **CodeRabbit** (`coderabbitai[bot]`, re-reviews
-  every push — the one to wait on for the head being merged). A green CodeRabbit
-  check does not mean a review ran: read the check run's output title, where only
-  `Finished` means reviewed. Silence means clean; findings arrive as inline
-  comments. `no-ai-review` at PR creation skips the bots.
-- The global pre-commit hook runs `gitleaks` and fails closed.
+- PR reviewers configured for this repo: **Codex** (run locally against the
+  committed branch before opening the PR) and **CodeRabbit**
+  (`coderabbitai[bot]`). How to read their checks -- which one re-reviews a
+  push, why a green check does not mean "no findings", and which label skips
+  which bot -- is in the global policy cited above and is deliberately not
+  repeated here.
