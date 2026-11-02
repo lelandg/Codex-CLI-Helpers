@@ -55,7 +55,11 @@ here; read it there. What is specific to this repo:
   so there is nothing for `npm audit` or `osv-scanner` to scan.
 - Dependabot: `github-actions` only (`.github/dependabot.yml`), which keeps the
   workflow's pinned action SHAs current. No package ecosystem, because there is
-  no dependency manifest to watch.
+  no dependency manifest to watch. Advisories against the actions themselves
+  still need alerts switched on, which a config file does not do.
+- Alerts and automatic security **updates** are two switches, not one. Alerts
+  only report; the half that opens PRs is `automated-security-fixes`, left OFF
+  here deliberately.
 - PR reviewers configured for this repo: **Codex** (run locally against the
   committed branch before opening the PR) and **CodeRabbit**
   (`coderabbitai[bot]`). How to read their checks -- which one re-reviews a
