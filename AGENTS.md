@@ -43,3 +43,34 @@ None repo-specific. The global house rules apply.
   `Docs/agents/Virtual-Agents-User-Manual.md`
 - Starter package overview: `virtual-agents/README.md`
 - Personal working notes: `AGENTS.local.md`
+
+## Scanning & review
+
+Policy lives in `~/.config/agents/AGENTS.md` -> "Dependency, code, and secret
+scanning" and "Model delegation & cross-provider review". It is not restated
+here; read it there. What is specific to this repo:
+
+- CI runs `gitleaks` on every PR, every push to `main`, and weekly
+  (`.github/workflows/security.yml`). There are no dependency manifests here,
+  so there is nothing for `npm audit` or `osv-scanner` to scan.
+- Dependabot: `github-actions` only (`.github/dependabot.yml`), which keeps the
+  workflow's pinned action SHAs current. No package ecosystem, because there is
+  no dependency manifest to watch. Advisories against the actions themselves
+  still need alerts switched on, which a config file does not do.
+- SHA-pinned actions get **no Dependabot alerts**: GitHub generates them only
+  for actions on semantic versions (docs: "About Dependabot alerts"). So no
+  security-update PR can ever fire for a pinned action, an
+  `applies-to: security-updates` group over github-actions is dead config, and
+  the weekly version update is their only automatic remediation -- which is why
+  the github-actions block carries no semver-major ignore. DETECTION comes from
+  osv-scanner's `github/actions` plugin, which is NOT in its default plugin set
+  and so is named explicitly in `security.yml`.
+- Alerts and automatic security **updates** are two switches, not one. Alerts
+  only report; the half that opens PRs is `automated-security-fixes`, left OFF
+  here deliberately.
+- PR reviewers configured for this repo: **Codex** (run locally against the
+  committed branch before opening the PR) and **CodeRabbit**
+  (`coderabbitai[bot]`). How to read their checks -- which one re-reviews a
+  push, why a green check does not mean "no findings", and which label skips
+  which bot -- is in the global policy cited above and is deliberately not
+  repeated here.
